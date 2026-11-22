@@ -1,0 +1,8 @@
+# Copy this file to terraform.tfvars and edit the values:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# terraform.tfvars is git-ignored — never commit real values you want to keep private.
+
+bucket_name = "nextwork-unique-bucket-lutendo-21" # MUST be globally unique
+aws_region  = "eu-north-1"                        # Europe (Stockholm)
+project_tag = "Create an S3 Bucket with Terraform"

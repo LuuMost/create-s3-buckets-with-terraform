@@ -1,0 +1,62 @@
+name: Terraform CI
+
+# Validates the Terraform code on every push/PR.
+# By default this does NOT need AWS credentials: fmt + validate only.
+# To also plan/apply against AWS, uncomment the OIDC steps below and
+# complete the one-time IAM OIDC role setup (see comments in the job).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write # required only if you enable the OIDC steps below
+
+jobs:
+  terraform:
+    name: fmt + validate + plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform fmt (check)
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+      # --- Optional: plan/apply against AWS via OIDC (no stored keys) ---
+      # 1. In AWS: create an OIDC provider for
+      #    https://token.actions.githubusercontent.com (audience sts.amazonaws.com)
+      # 2. Create an IAM role trusted by this repo's main branch, with
+      #    s3:* permissions scoped to your bucket (least privilege!).
+      # 3. Uncomment the steps below and replace YOUR_AWS_ACCOUNT_ID.
+      #
+      # - name: Configure AWS credentials (OIDC)
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/github-terraform-s3
+      #     aws-region: eu-north-1
+      #
+      # - name: Terraform plan
+      #   if: github.event_name == 'pull_request'
+      #   run: terraform plan -input=false
+      #
+      # - name: Terraform apply
+      #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      #   run: terraform apply -auto-approve -input=false
